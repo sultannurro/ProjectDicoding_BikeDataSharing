@@ -6,6 +6,8 @@ sns.set(style='dark')
 
 st.title('BIKE SHARING DATASET')
 main_df = pd.read_csv("main_data.csv")
+path_hour_csv = '\Documents\Bangkit\ProjectDicoding_BikeDataSharing\submission\data\hour.csv'
+hour_df = pd.read_csv(path_hour_csv)
 
 # Mengubah label kategori
 season_labels = {1: 'Spring', 2: 'Summer', 3: 'Fall', 4: 'Winter'}
@@ -14,7 +16,10 @@ weathersit_labels = {1: 'Clear', 2: 'Mist', 3: 'Light_rain', 4: 'Heavy_rain'}
 weekday_labels = {0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday'}
 
 # Assuming you have 'hour' and 'day' columns
-
+main_df['season_hour'] = main_df['season_hour'].map(season_labels)
+main_df['mnth_hour'] = main_df['mnth_hour'].map(month_labels)
+main_df['weathersit_hour'] = main_df['weathersit_hour'].map(weathersit_labels)
+main_df['weekday_hour'] = main_df['weekday_hour'].map(weekday_labels)
 
 main_df['season_day'] = main_df['season_day'].map(season_labels)
 main_df['mnth_day'] = main_df['mnth_day'].map(month_labels)
@@ -67,30 +72,31 @@ def pertanyaan_2_barplot(main_df):
     st.pyplot(fig)
 
 # Fungsi untuk visualisasi Pertanyaan 3
-def pertanyaan_3_tren_sepeda(main_df):
+def pertanyaan_3_tren_sepeda(hour_df):
     st.header("Tren Peminjaman Sepeda Setiap Bulan Berdasarkan Cuaca")
+    sns.set(style="whitegrid")
+
+    # Create a line chart for bike rental counts trend by month and weathersit
     plt.figure(figsize=(14, 8))
+    monthly_weathersit_counts = hour_df.groupby(['mnth', 'weathersit'])['cnt'].sum().reset_index()
 
-    # Mengelompokkan data berdasarkan 'mnth' dan 'weathersit', kemudian menghitung jumlah penyewaan ('cnt') untuk setiap kelompok
-    monthly_weathersit_counts = main_df.groupby(['mnth_hour', 'weathersit_hour'])['cnt_hour'].sum().reset_index()
+    # Change the order of months to January-December
+    monthly_weathersit_counts['mnth'] = pd.Categorical(monthly_weathersit_counts['mnth'], categories=range(1, 13), ordered=True)
 
-    # Mengurutkan linechart dari Januari sampai Desember
-    monthly_weathersit_counts['mnth_hour'] = pd.Categorical(monthly_weathersit_counts['mnth_hour'], categories=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], ordered=True)
+    # Create line chart for each weathersit
+    sns.lineplot(x='mnth', y='cnt', hue='weathersit', data=monthly_weathersit_counts, palette='viridis', marker='o')
 
-    # Membuat line chart untuk setiap kondisi cuaca
-    sns.lineplot(x='mnth_hour', y='cnt_hour', hue='weathersit_hour', data=monthly_weathersit_counts, palette='viridis', marker='o')
-    
-    for weathersit, color in zip(monthly_weathersit_counts['weathersit_hour'].unique(), sns.color_palette('viridis', n_colors=len(monthly_weathersit_counts['weathersit_hour'].unique()))):
-        subset = monthly_weathersit_counts[monthly_weathersit_counts['weathersit_hour'] == weathersit]
+    for weathersit, color in zip(monthly_weathersit_counts['weathersit'].unique(), sns.color_palette('viridis', n_colors=len(monthly_weathersit_counts['weathersit'].unique()))):
+        subset = monthly_weathersit_counts[monthly_weathersit_counts['weathersit'] == weathersit]
         for i, point in subset.iterrows():
-            plt.annotate(f'{int(point["cnt_hour"])}', (point['mnth_hour'], point['cnt_hour']), color=color, fontsize=9, ha='center', va='bottom')
-    
+            plt.annotate(f'{int(point["cnt"])}', (point['mnth'], point['cnt']), color=color, fontsize=9, ha='center', va='bottom')
 
+    # Add title and axis labels
     plt.title('Bike Rental Counts Trend by Month and Weathersit')
     plt.xlabel('Month')
     plt.ylabel('Count')
-    plt.legend(title='Weathersit', loc='upper left')
 
+    # Display the plot using st.pyplot()
     st.pyplot(plt)
     st.header("Conclusion:")
     st.markdown("""Berdasarkan gambar grafik, dapat dilihat peminjaman 
@@ -114,15 +120,13 @@ def pertanyaan_4_barplot(main_df):
     fig, ax = plt.subplots(figsize=(14, 8))
     sns.barplot(x='mnth_hour', y='atemp_hour', data=monthly_avg_feel_temp, color='skyblue')
 
-    # Menambahkan garis antara bar plot menggunakan pointplot
-    sns.pointplot(x='mnth_hour', y='atemp_hour', data=monthly_avg_feel_temp, color='black', scale=0.5)
+    # Handling NaN values in the pointplot
+    sns.pointplot(x='mnth_hour', y='atemp_hour', data=monthly_avg_feel_temp, color='black', scale=0.5, markers='o', dodge=True)
 
-    
     plt.title('Average Feeling Temperature Trend by Month')
     plt.xlabel('Month')
     plt.ylabel('Average Feeling Temperature')
 
-    
     st.pyplot(fig)
 
 def pertanyaan_4_boxplot(main_df):
@@ -166,7 +170,7 @@ elif selected_option == "Distribusi Peminjaman Sepeda per Hari dan per Jam":
                 pada jam 8, 5 sore, dan 6 sore. Dengan peminjam sebanyak 300 hingga 400 
                 lebih peminjam.""")
 elif selected_option == "Tren Peminjaman Sepeda Setiap Bulan Berdasarkan Cuaca":
-    pertanyaan_3_tren_sepeda(main_df)
+    pertanyaan_3_tren_sepeda(hour_df)
 elif selected_option == "Distribusi Pengguna Sepeda berdasarkan Temperatur dalam Satu Tahun":
     pertanyaan_4_barplot(main_df)
     pertanyaan_4_boxplot(main_df)

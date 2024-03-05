@@ -6,8 +6,7 @@ sns.set(style='dark')
 
 st.title('BIKE SHARING DATASET')
 main_df = pd.read_csv("main_data.csv")
-path_hour_csv = '\Documents\Bangkit\ProjectDicoding_BikeDataSharing\submission\data\hour.csv'
-hour_df = pd.read_csv(path_hour_csv)
+hour_df = pd.read_csv("hour_csv")
 
 # Mengubah label kategori
 season_labels = {1: 'Spring', 2: 'Summer', 3: 'Fall', 4: 'Winter'}
